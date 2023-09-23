@@ -14,7 +14,8 @@ switch ($permiso) {
     $opciones = [
       ["menu" => "Plato", "url" => "index.php?view=plato.php"],
       ["menu" => "Bebidas", "url" => "index.php?view=bebidas.php"],
-      ["menu" => "Caja", "url" => "index.php?view=caja.php"]
+      ["menu" => "Caja", "url" => "index.php?view=caja.php"],
+      ["menu" => "Ventas", "url" => "index.php?view=ventas.php"]
     ];
   break;
   
@@ -22,7 +23,8 @@ switch ($permiso) {
     $opciones = [
       ["menu" => "Plato", "url" => "index.php?view=plato.php"],
       ["menu" => "Bebidas", "url" => "index.php?view=bebidas.php"],
-      ["menu" => "Caja", "url" => "index.php?view=caja.php"]
+      ["menu" => "Caja", "url" => "index.php?view=caja.php"],
+      ["menu" => "Ventas", "url" => "index.php?view=ventas.php"]
     ];
   break;
 
@@ -30,7 +32,8 @@ switch ($permiso) {
     $opciones = [
       ["menu" => "Plato", "url" => "index.php?view=plato.php"],
       ["menu" => "Bebidas", "url" => "index.php?view=bebidas.php"],
-      ["menu" => "Caja", "url" => "index.php?view=caja.php"]
+      ["menu" => "Caja", "url" => "index.php?view=caja.php"],
+      ["menu" => "Ventas", "url" => "index.php?view=ventas.php"]
     ];
   break;
 }

@@ -10,39 +10,51 @@
         $plato = new Plato();
 
         if ($_POST['op'] == 'listar') {
-            $datos = $venta->listar();
+            $fechaActual = date('Y-m-d');
+            $fecha = ["fecha" => $fechaActual];
+            $datos = $venta->listar($fecha);
             echo json_encode($datos);
         }
 
-        // Para obtener los IDS de las bebidas y platos de la venta
         if ($_POST['op'] == 'obtener') {
-            $idventa = ["idventa" => $_POST['idventa']];
-            $datos = $venta->obtener($idventa);
-            $listabebidaArray = json_decode($datos['listabebida'], true);
-            $datosBebidas = array();
-            foreach ($listabebidaArray as $item) {
-                $idbebida = $item['idbebida'];
-                $cantidad = $item['cantidad'];
-                $datosBebidas[] = array(
-                    "idbebida" => $idbebida,
-                    "cantidad" => $cantidad,
-                );
+            $idventa = $_POST['idventa'];
+            $datos = $venta->obtener(["idventa" => $idventa]);
+        
+            $jsonDesglosado = array(); // Inicializamos el array
+        
+            if ($datos['listabebida'] != null) {
+                $listabebidaArray = json_decode($datos['listabebida'], true);
+                $datosBebidas = array();
+                foreach ($listabebidaArray as $item) {
+                    $idbebida = $item['idbebida'];
+                    $cantidad = $item['cantidad'];
+                    $datosBebidas[] = array(
+                        "idbebida" => $idbebida,
+                        "cantidad" => $cantidad,
+                    );
+                }
+                // Agregamos los datos de bebidas al array principal
+                $jsonDesglosado["bebidas"] = $datosBebidas;
             }
-            $jsonDesglosado = json_encode($datosBebidas);
-            echo $jsonDesglosado;
-
-            $datosPlatos = array();
-            foreach ($listabebidaArray as $item) {
-                $idbebida = $item['idbebida'];
-                $cantidad = $item['cantidad'];
-                $datosPlatos[] = array(
-                    "idplato" => $idbebida,
-                    "cantidad" => $cantidad,
-                );
+        
+            if ($datos['listaplato'] != null) {
+                $listaPlato = json_decode($datos['listaplato'], true);
+                $datosPlatos = array();
+                foreach ($listaPlato as $item) {
+                    $idplato = $item['idplato'];
+                    $cantidadP = $item['cantidad'];
+                    $datosPlatos[] = array(
+                        "idplato" => $idplato,
+                        "cantidad" => $cantidadP,
+                    );
+                }
+                // Agregamos los datos de platos al array principal
+                $jsonDesglosado["platos"] = $datosPlatos;
             }
-            $newjson = json_encode($datosPlatos);
-            echo $newjson;
+        
+            echo json_encode($jsonDesglosado); // Codificamos todo el array a JSON y lo enviamos
         }
+        
 
         if ($_POST['op'] == 'obtenerPB') {
             $idpedidoB = ["idpedidoB" => $_POST['idpedidoB']];

@@ -11,10 +11,10 @@
             $this->conexion = parent::getConexion();
         }
 
-        public function listar(){
+        public function listar($data = []){
             try {
-                $consulta = $this->conexion->prepare("CALL listarVentas()");
-                $consulta->execute();
+                $consulta = $this->conexion->prepare("CALL listarVentas(?)");
+                $consulta->execute(array($data['fecha']));
                 $datos = $consulta->fetchAll(PDO::FETCH_ASSOC);
                 return $datos;
             } catch (Exception $e) {

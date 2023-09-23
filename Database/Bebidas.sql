@@ -46,6 +46,18 @@ END $$
 CALL editarBebida(1,1,'Inka kola 1/2 litro',2,8,1);
 
 -------------------------------------------------------
+-- Obtener bebidas
+DELIMITER $$
+CREATE PROCEDURE obtenerBebida(IN _idbebida SMALLINT)
+BEGIN
+	SELECT beb.idbebida,beb.idmarca,mar.marca,beb.bebida,beb.precio,beb.stock,beb.estado,beb.fecha_creacion,beb.fecha_fin
+	FROM bebidas beb
+	INNER JOIN marcas mar ON mar.idmarca = beb.idmarca
+	WHERE beb.idbebida = _idbebida;
+END $$
+
+CALL obtenerbebida(1)
+------------------------------------------------------
 
 -- Listar bebidas
 DELIMITER $$

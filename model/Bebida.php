@@ -24,7 +24,7 @@
 
         public function obtener($data = []){
             try {
-                $query = "SELECT * FROM bebidas WHERE idbebida = ?";
+                $query = "CALL obtenerbebida(?)";
                 $consulta = $this->conexion->prepare($query);
                 $consulta->execute(array($data['idbebida']));
                 $datos = $consulta->fetch(PDO::FETCH_ASSOC);

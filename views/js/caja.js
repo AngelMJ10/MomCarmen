@@ -142,7 +142,7 @@ function numerarPedidos() {
 
     for (let i = 0; i < filasExistente.length; i++) {
         const fila = filasExistente[i];
-        const cantidad = parseInt(fila.querySelector("td:nth-child(6)").textContent);
+        const cantidad = parseInt(fila.querySelector("td:nth-child(6) input").value);
 
         if (!isNaN(cantidad)) {
             contador += cantidad;
@@ -154,11 +154,8 @@ function numerarPedidos() {
     carritoCantidad.textContent = contador;
 }
 
-
 let contadorC = 1;
-
 // Función para anotar la bebida al carrito
-
 function pedirB(id) {
     const tablaCarrito = document.querySelector("#tabla-carrito");
     const tbodyC = tablaCarrito.querySelector("tbody");
@@ -166,9 +163,11 @@ function pedirB(id) {
     parametros.append("op", "obtener");
     parametros.append("idbebida", id);
 
-    let idfila = parseInt(id); // Convertir id a número entero
+    let idfila = parseInt(id);
     let filasExistente = tbodyC.querySelectorAll("tr");
     
+    let filaExistente = null;
+
     for (let i = 0; i < filasExistente.length; i++) {
         let fila = filasExistente[i];
         let idExistente = parseInt(fila.querySelector("td:nth-child(2)").textContent);
@@ -176,42 +175,94 @@ function pedirB(id) {
 
         if (idExistente === idfila && tipoComida === "Bebida") {
             numerarPedidos();
-            // Si ya existe una fila, actualiza la cantidad y el total
-            let cantidadElement = fila.querySelector("td:nth-child(6)");
-            let totalElement = fila.querySelector("td:nth-child(7)");
-            let cantidad = parseInt(cantidadElement.textContent) + 1;
-            cantidadElement.textContent = cantidad;
-            totalElement.textContent = cantidad * parseFloat(fila.querySelector("td:nth-child(5)").textContent);
-            return; // Salir de la función si ya se actualizó la fila
+            filaExistente = fila;
+            break;
         }
     }
-    
 
-    // Si no existe una fila, agrega una nueva fila
-    fetch(`../controller/bebida.php`, {
-        method: 'POST',
-        body: parametros
-    })
-    .then(respuesta => respuesta.json())
-    .then(datos => {
-        numerarPedidos();
-        const precioSinDecimales = parseFloat(datos.precio).toString();
-        let cantidad = 1;
-        let total1 = cantidad * precioSinDecimales;
-        let nuevaFila = `
-            <tr>
-                <td data-label='#'>${contadorC}</td>
-                <td class='d-none'>${datos.idbebida}</td>
-                <td class='d-none'>Bebida</td>
-                <td data-label='Comida'>${datos.bebida}</td>
-                <td data-label='Precio'>${precioSinDecimales}</td>
-                <td data-label='Cantidad'>${cantidad}</td>
-                <td data-label='Total'>${total1}</td>
-            </tr>
-        `;
-        tbodyC.innerHTML += nuevaFila;
-        contadorC++;
-    });
+    if (filaExistente) {
+        let cantidadElement = filaExistente.querySelector("td:nth-child(6) input");
+        let cantidadActual = parseInt(cantidadElement.value);
+        let nuevaCantidad = cantidadActual + 1;
+        cantidadElement.value = nuevaCantidad;
+        const precioSinDecimales = parseFloat(filaExistente.querySelector("td:nth-child(5)").textContent);
+        let totalV = nuevaCantidad * precioSinDecimales;
+        filaExistente.querySelector("td:nth-child(7)").textContent = totalV.toFixed(2);
+        total();
+    } else {
+        fetch(`../controller/bebida.php`, {
+            method: 'POST',
+            body: parametros
+        })
+        .then(respuesta => respuesta.json())
+        .then(datos => {
+            numerarPedidos();
+            const precioSinDecimales = parseFloat(datos.precio).toString();
+            let cantidadPedido = 1;
+            let total1 = cantidadPedido * precioSinDecimales;
+            let nuevaFila = `
+                <tr>
+                    <td data-label='#'>${contadorC}</td>
+                    <td class='d-none'>${datos.idbebida}</td>
+                    <td class='d-none'>Bebida</td>
+                    <td data-label='Comida'>${datos.bebida}</td>
+                    <td data-label='Precio'>${precioSinDecimales}</td>
+                    <td data-label='Cantidad'>
+                        <button type='button' class='btn btn-sm btn-outline-primary' onclick="subirCantidad(this)">+</button>
+                        <input class='form-control-sm' type="number" value="${cantidadPedido}" oninput="validarCantidad(this)">
+                        <button type='button' class='btn btn-sm btn-outline-danger' onclick="bajarCantidad(this)">-</button>
+                    </td>
+                    <td data-label='Total'>${total1}</td>
+                    <td><button title='Eliminar selección' class='btn btn-outline-danger btn-sm' onclick="eliminarFila(this)"> - </button></td>
+                </tr>
+            `;
+            // Agregar la nueva fila al final del tbody sin eliminar las anteriores
+            tbodyC.insertAdjacentHTML('beforeend', nuevaFila);
+            contadorC++;
+        });
+    }
+}
+
+function eliminarFila(botonEliminar) {
+    const fila = botonEliminar.closest("tr");
+    fila.remove();
+    // Llama a la función para actualizar el total u otros cálculos si es necesario
+    total();
+}
+
+function subirCantidad(button) {
+    const inputCantidad = button.parentElement.querySelector("input");
+    let cantidad = parseInt(inputCantidad.value) || 0;
+    cantidad += 1;
+    inputCantidad.value = cantidad;
+    actualizarTotal(button.parentElement.parentElement);
+}
+
+function bajarCantidad(button){
+    const inputCantidad = button.parentElement.querySelector("input");
+    let cantidad = parseInt(inputCantidad.value) || 0;
+    if (cantidad > 1) {
+        cantidad -= 1;
+        inputCantidad.value = cantidad;
+        actualizarTotal(button.parentElement.parentElement);
+    }
+}
+
+function validarCantidad(input) {
+    let cantidad = parseInt(input.value) || 0;
+    if (cantidad < 1) {
+        input.value = 1;
+    }
+    actualizarTotal(input.parentElement.parentElement);
+}
+
+function actualizarTotal(fila) {
+    const precio = parseFloat(fila.querySelector("td:nth-child(5)").textContent);
+    const cantidad = parseInt(fila.querySelector("td:nth-child(6) input").value);
+    const totalElement = fila.querySelector("td:nth-child(7)");
+    const totalV = precio * cantidad;
+    totalElement.textContent = totalV;
+    total();
 }
 
 // Función para anotar el plato en el carrito
@@ -224,50 +275,62 @@ function pedirP(id) {
 
     const idfila = parseInt(id); // Convertir id a número entero
     const filasExistente = tbodyC.querySelectorAll("tr");
+    let filaExistente = null;
     
     for (let i = 0; i < filasExistente.length; i++) {
-        numerarPedidos();
         const fila = filasExistente[i];
         const idExistente = parseInt(fila.querySelector("td:nth-child(2)").textContent);
         const tipoComida = fila.querySelector("td:nth-child(3)").textContent;
 
         if (idExistente === idfila && tipoComida === "Comida") {
-            // Si ya existe una fila, actualiza la cantidad y el total
-            const cantidadElement = fila.querySelector("td:nth-child(6)");
-            const totalElement = fila.querySelector("td:nth-child(7)");
-            let cantidad = parseInt(cantidadElement.textContent) + 1;
-            cantidadElement.textContent = cantidad;
-            totalElement.textContent = cantidad * parseFloat(fila.querySelector("td:nth-child(5)").textContent);
-            return;
+            numerarPedidos();
+            numerarPedidos();
+            filaExistente = fila;
+            break;
         }
     }
 
-    // Si no existe una fila, agrega una nueva fila
-    fetch(`../controller/plato.php`, {
-        method: 'POST',
-        body: parametros
-    })
-    .then(respuesta => respuesta.json())
-    .then(datos => {
-        numerarPedidos();
-        const precioSinDecimales = parseFloat(datos.precio).toString();
-        let cantidad = 1;
-        let total1 = cantidad * precioSinDecimales;
-        let nuevaFila = `
-            <tr>
-                <td data-label='#'>${contadorC}</td>
-                <td class='d-none'>${datos.idplato}</td>
-                <td class='d-none'>Comida</td>
-                <td data-label='Comida'>${datos.plato}</td>
-                <td data-label='Precio'>${precioSinDecimales}</td>
-                <td data-label='Cantidad'>${cantidad}</td>
-                <td data-label='Total'>${total1}</td>
-            </tr>
-        `;
-        tbodyC.innerHTML += nuevaFila;
-        contadorC++;
-    });
-    total();
+    if (filaExistente) {
+        let cantidadElement = filaExistente.querySelector("td:nth-child(6) input");
+        let cantidadActual = parseInt(cantidadElement.value);
+        let nuevaCantidad = cantidadActual + 1;
+        cantidadElement.value = nuevaCantidad;
+        const precioSinDecimales = parseFloat(filaExistente.querySelector("td:nth-child(5)").textContent);
+        let totalV = nuevaCantidad * precioSinDecimales;
+        filaExistente.querySelector("td:nth-child(7)").textContent = totalV.toFixed(2);
+        total();
+    } else {
+        fetch(`../controller/plato.php`, {
+            method: 'POST',
+            body: parametros
+        })
+        .then(respuesta => respuesta.json())
+        .then(datos => {
+            numerarPedidos();
+            const precioSinDecimales = parseFloat(datos.precio).toString();
+            let cantidadPedido = 1;
+            let total1 = cantidadPedido * precioSinDecimales;
+            let nuevaFila = `
+                <tr>
+                    <td data-label='#'>${contadorC}</td>
+                    <td class='d-none'>${datos.idplato}</td>
+                    <td class='d-none'>Comida</td>
+                    <td data-label='Comida'>${datos.plato}</td>
+                    <td data-label='Precio'>${precioSinDecimales}</td>
+                    <td data-label='Cantidad'>
+                        <button type='button' class='btn btn-sm btn-outline-primary' onclick="subirCantidad(this)">+</button>
+                        <input class='form-control-sm' type="number" value="${cantidadPedido}" oninput="validarCantidad(this)">
+                        <button type='button' class='btn btn-sm btn-outline-danger' onclick="bajarCantidad(this)">-</button>
+                    </td>
+                    <td data-label='Total'>${total1}</td>
+                    <td><button title='Eliminar selección' class='btn btn-outline-danger btn-sm' onclick="eliminarFila(this)"> - </button></td>
+                </tr>
+            `;
+            // Agregar la nueva fila al final del tbody sin eliminar las anteriores
+            tbodyC.insertAdjacentHTML('beforeend', nuevaFila);
+            contadorC++;
+        });
+    }
 }
 
 // Función para calcular el total
@@ -297,52 +360,78 @@ function total() {
 function pedidoB() {
     const tablaCarrito = document.querySelector("#tabla-carrito");
     const filasExistente = tablaCarrito.querySelectorAll("tbody tr");
-    
+
     // Crear un array para almacenar los objetos JSON
     const pedidoArray = [];
-    
+
     // Recorrer las filas de la tabla
     for (let i = 0; i < filasExistente.length; i++) {
         const fila = filasExistente[i];
         const tipoComida = fila.querySelector("td:nth-child(3)").textContent;
-        
+
         // Verificar si la fila es de tipo "Bebida"
         if (tipoComida === "Bebida") {
             const idbebida = fila.querySelector("td:nth-child(2)").textContent;
-            const cantidad = fila.querySelector("td:nth-child(6)").textContent;
-            
+            const cantidad = fila.querySelector("td:nth-child(6) input").value;
+
             // Crear un objeto JSON con los datos de la fila actual
             const pedidoItem = {
                 "idbebida": idbebida,
                 "cantidad": cantidad
             };
-            
+
             // Agregar el objeto al array
             pedidoArray.push(pedidoItem);
         }
     }
-    
+
     // Convertir el array a formato JSON
     const pedidoJSON = JSON.stringify(pedidoArray);
-    
-    // Realizar la solicitud POST con los datos JSON
-    const parametros = new URLSearchParams();
-    parametros.append("op", "pedidoB");
-    parametros.append("listabebida", pedidoJSON);
-    
-    fetch('../controller/venta.php', {
-        method: 'POST',
-        body: parametros
-    })
-    .then(respuesta => {
-        if (respuesta.ok) {
-        } else {
-            throw new Error('Error en la solicitud');
-        }
-    })
-    .catch(error => {
-        console.error(error);
-        // Manejar el error aquí
+    validarStock(pedidoArray, pedidoJSON);
+}
+
+function validarStock(pedidoArray, pedidoJSON){
+    pedidoArray.map(element => {
+        const parametros = new URLSearchParams();
+        parametros.append("op", "obtener");
+        parametros.append("idbebida", element.idbebida);
+        return fetch('../controller/bebida.php', {
+            method: 'POST',
+            body: parametros
+        })
+        .then(respuesta => respuesta.json())
+        .then(datos => {
+            let stockP = parseInt(datos.stock);
+            let cantidadP = parseInt(element.cantidad);
+            console.log(cantidadP);
+            console.log(stockP);
+            if (cantidadP > stockP ) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Stock insuficiente',
+                    html: `Stock insuficiente para la bebida <b>${datos.bebida}</b>. Stock disponible: <b>${datos.stock}</b>`,
+                }) 
+                return;
+            }else{
+                console.log(pedidoJSON);
+                const parametrosL = new URLSearchParams();
+                parametrosL.append("op", "pedidoB");
+                parametrosL.append("listabebida", pedidoJSON);
+                fetch('../controller/venta.php', {
+                    method: 'POST',
+                    body: parametrosL
+                })
+                .then(respuesta => {
+                    if (respuesta.ok) {
+                    } else {
+                        throw new Error('Error en la solicitud');
+                    }
+                })
+                .catch(error => {
+                    console.error(error);
+                });
+            }
+        });
     });
 }
 
@@ -362,7 +451,7 @@ function pedidoP() {
         // Verificar si la fila es de tipo "Bebida"
         if (tipoComida === "Comida") {
             const idplato = fila.querySelector("td:nth-child(2)").textContent;
-            const cantidad = fila.querySelector("td:nth-child(6)").textContent;
+            const cantidad = fila.querySelector("td:nth-child(6) input").value;
             
             // Crear un objeto JSON con los datos de la fila actual
             const pedidoItem = {
@@ -486,6 +575,7 @@ function caja() {
                 }
             });
         }
+
     }else{
         Swal.fire({
             icon: 'warning',
@@ -609,6 +699,7 @@ function obtenerBebidas(idpedidoB) {
 
 // Función para quitar stocks a las bebidas que se vendan
 function quitarStock(idbebida, cantidad) {
+    console.log("Cantidad a quitar:" + cantidad);
     const parametrosB = new URLSearchParams();
     parametrosB.append("op", "quitarStock")
     parametrosB.append("idbebida", idbebida)

@@ -54,7 +54,6 @@
         
             echo json_encode($jsonDesglosado); // Codificamos todo el array a JSON y lo enviamos
         }
-        
 
         if ($_POST['op'] == 'obtenerPB') {
             $idpedidoB = ["idpedidoB" => $_POST['idpedidoB']];

@@ -131,10 +131,11 @@ CREATE TABLE pedido_plato
 
 
 INSERT INTO pedido_plato(idusuario,listaplato)
-VALUES(1,'[{"idplato" : "1" , "cantidad" : "2"}, {"idplato" : "2" , "cantidad" : "2"}]');
+VALUES(1,'[{"idbebida": "5","cantidad": "1"}]');
+
 SELECT * FROM pedido_plato
 SELECT * FROM pedido_bebida;
-SELECT * FROM venta;
+SELECT * FROM pedido_bebida ORDER BY idpedidoB DESC;
 -----------------------------------------------
 CREATE TABLE venta
 (
